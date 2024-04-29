@@ -27,14 +27,23 @@ const modal = reactive({
   mostrar: false,
   animar: false
 })
+
 watch(gastos, () => {
   const totalGastado = gastos.value.reduce((total, gasto) => gasto.cantidad + total, 0);
   gastado.value = totalGastado;
   disponible.value = presupuesto.value - totalGastado;
- 
+
 }, {
   deep: true
 })
+
+watch(modal, () => {
+  if (!modal.mostrar) {
+    reinciarStateGasto();
+  }
+}, {
+  deep: true
+});
 
 const definirPresupuesto = (cantidad) => {
   presupuesto.value = cantidad;
@@ -57,31 +66,44 @@ const ocultarModal = () => {
   setTimeout(() => {
     modal.mostrar = false;
   }, 300);
+  reinciarStateGasto();
 }
 
-const guardarGasto = () => {
+const guardarGasto = () => { 
+  if(gasto.id) {
+    const {id} = gasto;
+    const i = gastos.value.findIndex((gasto) => gasto.id === id);
+    gastos.value[i] = {...gasto}
 
-  gastos.value.push({
-    ...gasto,
-    id: generarId()
+  } else {
+    gastos.value.push({
+      ...gasto,
+      id: generarId()
+    })
+  }
+
+  ocultarModal();
+  reinciarStateGasto();
+}
+const seleccionarGasto = (id) => {
+  const gastoEditar = gastos.value.filter(gasto => gasto.id === id)[0];
+  Object.assign(gasto, gastoEditar);
+  mostrarModal();
+}
+const reinciarStateGasto = () => {
+  Object.assign(gasto, {
+    nombre: "",
+    cantidad: "",
+    categoria: "",
+    id: null,
+    fecha: Date.now()
   })
-ocultarModal();
- // Reiniciear el objeto
-
- Object.assign(gasto, {
-   nombre: "",
-   cantidad: "",
-   categoria: "",
-   id: null,
-   fecha: Date.now()
- })
 }
-
 
 </script>
 
 <template>
-  <div :class="{fijar: modal.mostrar}">
+  <div :class="{ fijar: modal.mostrar }">
     <header>
       <h1>Planificador de gastos</h1>
 
@@ -99,7 +121,7 @@ ocultarModal();
 
       <div class="listado-gastos contenedor">
         <h2>{{ gastos.length > 0 ? "Gastos" : "No hay gastos" }}</h2>
-        <Gasto  v-for="gasto in gastos" :key="gasto.id" :gasto="gasto" />
+        <Gasto v-for="gasto in gastos" :key="gasto.id" :gasto="gasto" @seleccionar-gasto="seleccionarGasto" />
       </div>
 
 
@@ -107,7 +129,8 @@ ocultarModal();
         <img :src="iconoNuevoGasto" alt="icono nuevo gasto" @click="mostrarModal">
       </div>
       <Modal v-if="modal.mostrar" @ocultar-modal=ocultarModal :modal="modal" @guardar-gasto=guardarGasto
-        v-model:nombre="gasto.nombre" v-model:cantidad="gasto.cantidad" v-model:categoria="gasto.categoria" />
+        v-model:nombre="gasto.nombre" v-model:cantidad="gasto.cantidad" v-model:categoria="gasto.categoria"
+        :disponible="disponible" :id="gasto.id" />
     </main>
 
   </div>
@@ -197,9 +220,11 @@ header h1 {
   width: 5rem;
   cursor: pointer
 }
+
 .listado-gastos {
   margin-top: 10rem;
 }
+
 .listado-gastos h2 {
   font-weight: 900;
   color: var(--gris-oscuro)

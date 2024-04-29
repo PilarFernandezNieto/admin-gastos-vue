@@ -24,13 +24,24 @@ const props = defineProps({
     categoria: {
         type: String,
         required: true
+    },
+    disponible: {
+        type: Number,
+        required: true
+    },
+    id: {
+        type: [String, null],
+        required : true
     }
 })
 
-const agregarGasto = () => {
-    // Validar que no haya campos vacíos
 
-    const { nombre, cantidad, categoria } = props;
+const old = props.cantidad;
+const agregarGasto = () => {
+
+    // Validar que no haya campos vacíos
+    const { nombre, cantidad, categoria, disponible, id } = props;
+
     if ([nombre, cantidad, categoria].includes("")) {
         error.value = "Todos los campos son obligatorios";
         setTimeout(() => {
@@ -46,6 +57,28 @@ const agregarGasto = () => {
         }, 3000);
         return;
     }
+
+    // Validar que el usuario no gaste más que lo disponible
+    if(id) {
+        // Tomar en cuenta el gasto realizado
+        if(cantidad > pld + disponible){
+            error.value = "Has excedido el presupuesto";
+            setTimeout(() => {
+                error.value = ""
+            }, 3000);
+            return;
+        }
+    } else {
+        if (cantidad > disponible) {
+            error.value = "Has excedido el presupuesto";
+            setTimeout(() => {
+                error.value = ""
+            }, 3000);
+            return;
+        }
+    }
+
+
 
     emit("guardar-gasto");
 
