@@ -1,12 +1,12 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import Alerta from "./Alerta.vue";
 import cerrarModal from "../assets/img/cerrar.svg";
 
 const error = ref("");
 
 
-const emit = defineEmits(["ocultar-modal", "update:nombre", "update:cantidad", "update:categoria", "guardar-gasto"]);
+const emit = defineEmits(["ocultar-modal", "update:nombre", "update:cantidad", "update:categoria", "guardar-gasto", "eliminar-gasto"]);
 
 const props = defineProps({
     modal: {
@@ -33,6 +33,9 @@ const props = defineProps({
         type: [String, null],
         required : true
     }
+})
+const editando = computed(() => {
+    return props.id;
 })
 
 
@@ -61,7 +64,7 @@ const agregarGasto = () => {
     // Validar que el usuario no gaste más que lo disponible
     if(id) {
         // Tomar en cuenta el gasto realizado
-        if(cantidad > pld + disponible){
+        if(cantidad > old + disponible){
             error.value = "Has excedido el presupuesto";
             setTimeout(() => {
                 error.value = ""
@@ -95,7 +98,7 @@ const agregarGasto = () => {
         </div>
         <div class="contenedor contenedor-formulario" :class="[modal.animar ? 'animar' : 'cerrar']">
             <form class="nuevo-gasto" @submit.prevent="agregarGasto">
-                <legend>Añadir gasto</legend>
+                <legend>{{ id ? "Guardar Cambios" : "Añadir Gasto"}}</legend>
                 <Alerta v-if="error">{{ error }}</Alerta>
                 <div class="campo">
                     <label for="nombre">Nombre Gasto</label>
@@ -120,8 +123,12 @@ const agregarGasto = () => {
                         <option value="suscripciones">Suscripciones</option>
                     </select>
                 </div>
-                <input type="submit" value="Añadir Gasto">
+                <input type="submit" :value="[ id ? 'Guardar Cambios' : 'Añadir Gasto']">
             </form>
+            <button v-if="id" type="button" class="btn-eliminar" @click="$emit('eliminar-gasto')">Eliminar
+
+
+            </button>
 
         </div>
     </div>
@@ -201,6 +208,18 @@ const agregarGasto = () => {
     background-color: var(--azul);
     color: var(--blanco);
     font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-eliminar {
+    border: none;
+    padding: 1rem;
+    width: 100%;
+    background-color: #Ef4444;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--blanco);
+    margin-top: 10rem;
     cursor: pointer;
 }
 </style>
